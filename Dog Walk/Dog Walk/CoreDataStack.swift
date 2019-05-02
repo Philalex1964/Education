@@ -31,4 +31,14 @@ class CoreDataStack {
     }
     return container
   } ()
+  
+  func saveContext () {
+    guard managedContext.hasChanges else  { return }
+    
+    do {
+      try managedContext.save()
+    } catch let error as NSError {
+      print("Unresolved error \(error), \(error.userInfo)")
+    }
+  }
 }
