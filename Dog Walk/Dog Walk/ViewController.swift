@@ -30,7 +30,7 @@ import UIKit
 import CoreData
 
 class ViewController: UIViewController {
-
+  
   // MARK: - Properties
   lazy var dateFormatter: DateFormatter = {
     let formatter = DateFormatter()
@@ -40,17 +40,17 @@ class ViewController: UIViewController {
   }()
   
   var managedContext: NSManagedObjectContext!
-
+  
   //var walks: [Date] = []
   var currentDog: Dog?
-
+  
   // MARK: - IBOutlets
   @IBOutlet var tableView: UITableView!
-
+  
   // MARK: - View Life Cycle
   override func viewDidLoad() {
     super.viewDidLoad()
-
+    
     tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
     let dogName = "Fido"
     let dogFetch: NSFetchRequest<Dog> = Dog.fetchRequest()
@@ -75,7 +75,7 @@ class ViewController: UIViewController {
 
 // MARK: - IBActions
 extension ViewController {
-
+  
   @IBAction func add(_ sender: UIBarButtonItem) {
     //walks.append(Date())
     // Insert a new Walk entity into Core Data
@@ -85,11 +85,11 @@ extension ViewController {
     
     // Inrest the new Walk into Dog's walks set
     
-//    if let dog = currentDog,
-//      let walks = dog.walks?.mutableCopy() as? NSMutableOrderedSet {
-//        walks.add(walk)
-//        dog.walks = walks
-//    }
+    //    if let dog = currentDog,
+    //      let walks = dog.walks?.mutableCopy() as? NSMutableOrderedSet {
+    //        walks.add(walk)
+    //        dog.walks = walks
+    //    }
     
     currentDog?.addToWalks(walk)
     
@@ -109,13 +109,13 @@ extension ViewController {
 
 // MARK: UITableViewDataSource
 extension ViewController: UITableViewDataSource {
-
+  
   func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
     return currentDog?.walks?.count ?? 0
   }
-
-  func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
   
+  func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+    
     let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
     
     guard let walk = currentDog?.walks?[indexPath.row] as? Walk,
@@ -126,8 +126,37 @@ extension ViewController: UITableViewDataSource {
     cell.textLabel?.text = dateFormatter.string(from: walkDate)
     return cell
   }
-
+  
+  func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+    return true
+  }
+  
+  func tableView(_ tableView: UITableView,
+                 commit editingStyle: UITableViewCell.EditingStyle,
+                 forRowAt indexPath: IndexPath) {
+    
+    //1
+    guard let walkToRemove = currentDog?.walks?[indexPath.row] as? Walk,
+      editingStyle == .delete else {
+        return
+    }
+    
+    //2
+    managedContext.delete(walkToRemove)
+    
+    do {
+      //3
+      try  managedContext.save()
+      
+      //4
+      tableView.deleteRows(at: [indexPath], with: .automatic)
+    } catch let error as NSError {
+      print("Saving error: \(error), description: \(error.userInfo)")
+    }
+  }
+  
   func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
     return "List of Walks"
   }
 }
+
