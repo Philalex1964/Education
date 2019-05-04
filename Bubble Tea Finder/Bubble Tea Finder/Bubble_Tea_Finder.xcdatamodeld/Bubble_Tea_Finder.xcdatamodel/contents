@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="11224.2" systemVersion="15G31" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="14460.32" systemVersion="17G6030" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
     <entity name="Category" representedClassName=".Category" syncable="YES">
         <attribute name="categoryID" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
@@ -34,11 +34,12 @@
         <relationship name="priceInfo" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PriceInfo" inverseName="venue" inverseEntity="PriceInfo" syncable="YES"/>
         <relationship name="stats" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Stats" inverseName="venue" inverseEntity="Stats" syncable="YES"/>
     </entity>
+    <fetchRequest name="FetchRequest" entity="Venue"/>
     <elements>
-        <element name="Category" positionX="-63" positionY="-18" width="128" height="90"/>
-        <element name="Location" positionX="-54" positionY="-9" width="128" height="150"/>
-        <element name="PriceInfo" positionX="-36" positionY="9" width="128" height="75"/>
-        <element name="Stats" positionX="-18" positionY="27" width="128" height="105"/>
-        <element name="Venue" positionX="0" positionY="45" width="128" height="165"/>
+        <element name="Category" positionX="106.74609375" positionY="-57.4375" width="128" height="90"/>
+        <element name="Location" positionX="-35.8203125" positionY="-52.484375" width="128" height="150"/>
+        <element name="PriceInfo" positionX="-32.20703125" positionY="107.8984375" width="128" height="75"/>
+        <element name="Stats" positionX="117.9296875" positionY="143.3828125" width="128" height="105"/>
+        <element name="Venue" positionX="427.52734375" positionY="-39.4609375" width="128" height="165"/>
     </elements>
 </model>
