@@ -4,6 +4,13 @@
 import UIKit
 import CoreData
 
+protocol FilterViewControllerDelegate: class {
+  func filterViewController(
+    filter: FilterViewController,
+    didSetPredicate predicate: NSPredicate?,
+    sortDescriptor: NSSortDescriptor?)
+}
+
 class FilterViewController: UITableViewController {
 
   @IBOutlet weak var firstPriceCategoryLabel: UILabel!
@@ -28,6 +35,9 @@ class FilterViewController: UITableViewController {
   @IBOutlet weak var priceSortCell: UITableViewCell!
   
   var coreDataStack: CoreDataStack!
+  weak var delegate: FilterViewControllerDelegate?
+  var selectedSortDescriptor: NSSortDescriptor?
+  var selectedPredicate: NSPredicate?
   
   lazy var cheapVenuePredicate: NSPredicate = {
     return NSPredicate(format: "%K == %@", #keyPath(Venue.priceInfo.priceCategory), "$")
@@ -42,6 +52,42 @@ class FilterViewController: UITableViewController {
     return NSPredicate(format: "%K == %@",
                        #keyPath(Venue.priceInfo.priceCategory), "$$$")
   }()
+  
+  lazy var offeringDealPredicate: NSPredicate = {
+    return NSPredicate(format: "%K > 0",
+                       #keyPath(Venue.specialCount))
+  }()
+  
+  lazy var walkingDistancePredicate: NSPredicate = {
+    return NSPredicate(format: "%K < 500",
+                       #keyPath(Venue.location.distance))
+  }()
+  
+  lazy var hasUserTipsPredicate: NSPredicate = {
+    return NSPredicate(format: "%K > 0",
+                       #keyPath(Venue.stats.tipCount))
+  }()
+  
+  lazy var nameSortDescriptor: NSSortDescriptor = {
+    let compareSelector =
+      #selector(NSString.localizedStandardCompare(_:))
+    return NSSortDescriptor(key: #keyPath(Venue.name),
+                            ascending: true,
+                            selector: compareSelector)
+  }()
+  
+  lazy var distanceSortDescriptor: NSSortDescriptor = {
+    return NSSortDescriptor(
+      key: #keyPath(Venue.location.distance),
+      ascending: true)
+  }()
+  
+  lazy var priceSortDescriptor: NSSortDescriptor = {
+    return NSSortDescriptor(
+      key: #keyPath(Venue.priceInfo.priceCategory),
+      ascending: true)
+  }()
+    
   
   // MARK: - View Life Cycle
   override func viewDidLoad() {
@@ -58,7 +104,12 @@ class FilterViewController: UITableViewController {
 extension FilterViewController {
 
   @IBAction func search(_ sender: UIBarButtonItem) {
+    delegate?.filterViewController(
+      filter: self,
+      didSetPredicate: selectedPredicate,
+      sortDescriptor: selectedSortDescriptor)
 
+    dismiss(animated: true)
   }
 }
 
@@ -66,6 +117,41 @@ extension FilterViewController {
 extension FilterViewController {
 
   override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+    
+    guard let cell = tableView.cellForRow(at: indexPath) else {
+      return
+    }
+    
+    // Price section
+    switch cell {
+    case cheapVenueCell:
+      selectedPredicate = cheapVenuePredicate
+    case moderateVenueCell:
+      selectedPredicate = moderateVenuePredicate
+    case expensiveVenueCell:
+      selectedPredicate = expebsiveVenuePredicate
+      
+    // Most popular section
+    case offeringDealCell:
+      selectedPredicate = offeringDealPredicate
+    case walkingDistanceCell:
+      selectedPredicate = walkingDistancePredicate
+    case userTipsCell:
+      selectedPredicate = hasUserTipsPredicate
+      
+    // Sort By section
+    case nameAZSortCell:
+      selectedSortDescriptor = nameSortDescriptor
+    case nameZASortCell:
+      selectedSortDescriptor = nameSortDescriptor.reversedSortDescriptor as? NSSortDescriptor
+    case distanceSortCell:
+      selectedSortDescriptor = distanceSortDescriptor
+    case priceSortCell:
+      selectedSortDescriptor = priceSortDescriptor
+    default: break
+    }
+    
+    cell.accessoryType = .checkmark
   }
 }
 
