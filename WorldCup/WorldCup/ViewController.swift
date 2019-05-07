@@ -11,16 +11,23 @@ class ViewController: UIViewController {
   lazy var fetchedResultsController: NSFetchedResultsController<Team> = {
     // 1
     let fetchRequest: NSFetchRequest<Team> = Team.fetchRequest()
-    let sort = NSSortDescriptor(key: #keyPath(Team.teamName),
-                                ascending: true)
-    fetchRequest.sortDescriptors = [sort]
+    
+    let zoneSort = NSSortDescriptor(key: #keyPath(Team.qualifyingZone),
+                                   ascending: true)
+    let scoreSort = NSSortDescriptor(key: #keyPath(Team.wins),
+                                    ascending: false)
+    let nameSort = NSSortDescriptor(key: #keyPath(Team.teamName),
+                                   ascending: true)
+    fetchRequest.sortDescriptors = [zoneSort, scoreSort, nameSort]
     
     // 2
     let fetchedResultsController = NSFetchedResultsController(
       fetchRequest: fetchRequest,
       managedObjectContext: coreDataStack.managedContext,
-      sectionNameKeyPath: nil,
-      cacheName: nil)
+      sectionNameKeyPath: #keyPath(Team.qualifyingZone),
+      cacheName: "worldCup")
+    
+    fetchedResultsController.delegate = self
     
     return fetchedResultsController
   }()
@@ -38,6 +45,57 @@ class ViewController: UIViewController {
     } catch let error as NSError {
       print("Fetching error: \(error), \(error.userInfo)")
     }
+  }
+  
+  override func motionEnded(_ motion: UIEvent.EventSubtype,
+                            with event: UIEvent?) {
+    if motion == .motionShake {
+      addButton.isEnabled = true
+    }
+  }
+}
+
+// MARK: - IBActions
+extension ViewController {
+  
+  @IBAction func addTeam(_ sender: Any) {
+    
+    let alertController = UIAlertController(title: "Secret Team",
+                                            message: "Add a new team",
+                                            preferredStyle: .alert)
+    
+    alertController.addTextField { textField in
+      textField.placeholder = "Team Name"
+    }
+    
+    alertController.addTextField { textField in
+      textField.placeholder = "Qualifying Zone"
+    }
+    
+    let saveAction = UIAlertAction(title: "Save",
+                                   style: .default) {
+      [unowned self] action in
+                              
+      guard
+        let nameTextField = alertController.textFields?.first,
+        let zoneTextField = alertController.textFields?.last
+        else {
+          return
+      }
+      
+      let team = Team(context: self.coreDataStack.managedContext)
+                                    
+      team.teamName = nameTextField.text
+      team.qualifyingZone = zoneTextField.text
+      team.imageName = "wenderland-flag"
+      self.coreDataStack.saveContext()
+    }
+    
+    alertController.addAction(saveAction)
+    alertController.addAction(UIAlertAction(title: "Cancel",
+                                            style: .cancel))
+    
+    present(alertController, animated: true)
   }
 }
 
@@ -68,6 +126,12 @@ extension ViewController: UITableViewDataSource {
   func numberOfSections(in tableView: UITableView) -> Int {
     return fetchedResultsController.sections?.count ?? 0
   }
+  
+  func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+    let sectionInfo = fetchedResultsController.sections?[section]
+    return sectionInfo?.name
+  }
+
 
   func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
     
@@ -93,6 +157,55 @@ extension ViewController: UITableViewDelegate {
     let team = fetchedResultsController.object(at: indexPath)
     team.wins = team.wins + 1
     coreDataStack.saveContext()
-    tableView.reloadData()
+ 
+  }
+}
+
+// MARK: - NSFetchedResultsControllerDelegate
+extension ViewController: NSFetchedResultsControllerDelegate {
+  
+  func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+    tableView.beginUpdates()
+  }
+  
+  func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>,
+                  didChange anObject: Any,
+                  at indexPath: IndexPath?,
+                  for type: NSFetchedResultsChangeType,
+                  newIndexPath: IndexPath?) {
+    
+    switch type {
+    case .insert:
+      tableView.insertRows(at: [newIndexPath!], with: .automatic)
+    case .delete:
+      tableView.deleteRows(at: [newIndexPath!], with: .automatic)
+    case .update:
+      let cell = tableView.cellForRow(at: indexPath!) as! TeamCell
+      configure(cell: cell, for: indexPath!)
+    case .move:
+      tableView.deleteRows(at: [indexPath!], with: .automatic)
+      tableView.insertRows(at: [newIndexPath!], with: .automatic)
+    }
+  }
+  
+  func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>,
+                  didChange sectionInfo: NSFetchedResultsSectionInfo,
+                  atSectionIndex sectionIndex: Int,
+                  for type: NSFetchedResultsChangeType) {
+    
+    let indexSet = IndexSet(integer: sectionIndex)
+    
+    switch type {
+    case .insert:
+      tableView.insertSections(indexSet, with: .automatic)
+    case .delete:
+      tableView.deleteSections(indexSet, with: .automatic)
+    default: break
+    }
+  }
+  
+  func controllerDidChangeContent(_ controller:
+    NSFetchedResultsController<NSFetchRequestResult>) {
+      tableView.endUpdates()
   }
 }
